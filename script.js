@@ -1,4 +1,4 @@
-const textos = ["Desarrollador Web 💻","Marketing Digital 📈","Roblox Luau 🎮","Creatividad ✨"];
+const textos = ["Desarrollador Web 💻", "Marketing Digital 📈", "Roblox Luau 🎮", "Creatividad ✨"];
 let textoActual = 0, index = 0, isDeleting = false;
 const velocidadEscribir = 100, velocidadBorrar = 50, pausaAntesBorrar = 2000, pausaAntesEscribir = 500;
 
@@ -57,7 +57,7 @@ const statsObserver = new IntersectionObserver((entries) => {
 const stats = document.querySelector('.stats-rapidos');
 if (stats) statsObserver.observe(stats);
 
-window.onload = function() {
+window.onload = function () {
     setTimeout(typeText, pausaAntesEscribir);
     document.querySelectorAll('.fade-up').forEach(el => setTimeout(() => el.classList.add('visible'), 100));
 };
