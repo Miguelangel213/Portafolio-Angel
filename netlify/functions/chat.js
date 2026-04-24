@@ -8,52 +8,32 @@ exports.handler = async function (event) {
 
     try {
         const { message } = JSON.parse(event.body);
+        const apiKey = process.env.GROQ_API_KEY;
 
-        const apiKey = process.env.GEMINI_API_KEY;
-
-        if (!apiKey) {
-            return {
-                statusCode: 500,
-                body: JSON.stringify({ reply: "Falta la API key en Netlify." })
-            };
-        }
-
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    contents: [
-                        {
-                            role: "user",
-                            parts: [
-                                {
-                                    text: `Eres POP'S BOT. Responde en español, corto, claro y amigable. Usuario: ${message}`
-                                }
-                            ]
-                        }
-                    ]
-                })
-            }
-        );
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: "llama-3.1-8b-instant",
+                messages: [
+                    {
+                        role: "system",
+                        content: "Eres POP'S BOT, experto en crypto. Responde corto, claro y amigable."
+                    },
+                    {
+                        role: "user",
+                        content: message
+                    }
+                ]
+            })
+        });
 
         const data = await response.json();
 
-        if (!response.ok) {
-            return {
-                statusCode: 200,
-                body: JSON.stringify({
-                    reply: data.error?.message || "Error con Gemini API."
-                })
-            };
-        }
-
-        const reply =
-            data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-            "Gemini respondió vacío. Revisa la API key o el modelo.";
+        const reply = data.choices?.[0]?.message?.content || "No pude responder.";
 
         return {
             statusCode: 200,
@@ -63,9 +43,7 @@ exports.handler = async function (event) {
     } catch (error) {
         return {
             statusCode: 500,
-            body: JSON.stringify({
-                reply: "Error interno en la función."
-            })
+            body: JSON.stringify({ reply: "Error con IA." })
         };
     }
 };
