@@ -2,24 +2,24 @@ exports.handler = async function (event) {
     if (event.httpMethod !== "POST") {
         return {
             statusCode: 405,
-            body: JSON.stringify({ error: "Método no permitido" })
+            body: "Método no permitido"
         };
     }
 
     try {
         const { message } = JSON.parse(event.body);
 
-        if (!message) {
+        const apiKey = process.env.GEMINI_API_KEY;
+
+        if (!apiKey) {
             return {
-                statusCode: 400,
-                body: JSON.stringify({ error: "Mensaje vacío" })
+                statusCode: 500,
+                body: JSON.stringify({ error: "Falta GEMINI_API_KEY" })
             };
         }
 
-        const apiKey = process.env.GEMINI_API_KEY;
-
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
             {
                 method: "POST",
                 headers: {
@@ -30,7 +30,7 @@ exports.handler = async function (event) {
                         {
                             parts: [
                                 {
-                                    text: `Eres POP'S BOT, un bot amigable de Telegram sobre crypto, listings, automatización e IA. Responde corto, claro y en español. Pregunta del usuario: ${message}`
+                                    text: `Eres POP'S BOT. Responde en español, corto y claro. Usuario: ${message}`
                                 }
                             ]
                         }
@@ -41,13 +41,13 @@ exports.handler = async function (event) {
 
         const data = await response.json();
 
-        const botReply =
+        const reply =
             data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-            "No pude responder ahora. Intenta otra vez.";
+            "No pude responder ahora.";
 
         return {
             statusCode: 200,
-            body: JSON.stringify({ reply: botReply })
+            body: JSON.stringify({ reply })
         };
 
     } catch (error) {
