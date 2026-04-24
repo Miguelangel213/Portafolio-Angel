@@ -14,7 +14,7 @@ exports.handler = async function (event) {
         if (!apiKey) {
             return {
                 statusCode: 500,
-                body: JSON.stringify({ error: "Falta GEMINI_API_KEY" })
+                body: JSON.stringify({ reply: "Falta la API key en Netlify." })
             };
         }
 
@@ -28,9 +28,10 @@ exports.handler = async function (event) {
                 body: JSON.stringify({
                     contents: [
                         {
+                            role: "user",
                             parts: [
                                 {
-                                    text: `Eres POP'S BOT. Responde en español, corto y claro. Usuario: ${message}`
+                                    text: `Eres POP'S BOT. Responde en español, corto, claro y amigable. Usuario: ${message}`
                                 }
                             ]
                         }
@@ -41,9 +42,18 @@ exports.handler = async function (event) {
 
         const data = await response.json();
 
+        if (!response.ok) {
+            return {
+                statusCode: 200,
+                body: JSON.stringify({
+                    reply: data.error?.message || "Error con Gemini API."
+                })
+            };
+        }
+
         const reply =
             data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-            "No pude responder ahora.";
+            "Gemini respondió vacío. Revisa la API key o el modelo.";
 
         return {
             statusCode: 200,
@@ -53,7 +63,9 @@ exports.handler = async function (event) {
     } catch (error) {
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: "Error interno del servidor" })
+            body: JSON.stringify({
+                reply: "Error interno en la función."
+            })
         };
     }
 };
