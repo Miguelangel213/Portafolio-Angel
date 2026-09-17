@@ -2,13 +2,29 @@ exports.handler = async function (event) {
     if (event.httpMethod !== "POST") {
         return {
             statusCode: 405,
-            body: "Método no permitido"
+            body: JSON.stringify({ reply: "Método no permitido" })
         };
     }
 
     try {
-        const { message } = JSON.parse(event.body);
         const apiKey = process.env.GROQ_API_KEY;
+        
+        // Validar que la API Key exista en Netlify
+        if (!apiKey) {
+            console.error("ERROR: La variable GROQ_API_KEY no está configurada en Netlify.");
+            return {
+                statusCode: 500,
+                body: JSON.stringify({ reply: "Error de configuración: falta la clave de la IA." })
+            };
+        }
+
+        const { message } = JSON.parse(event.body || "{}");
+        if (!message) {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ reply: "El mensaje no puede estar vacío." })
+            };
+        }
 
         const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
             method: "POST",
@@ -21,38 +37,14 @@ exports.handler = async function (event) {
                 messages: [
                     {
                         role: "system",
-                        content: `Eres POP'S BOT, un asistente inteligente del portafolio de Angel Gómez.
+                        content: `Eres POP'S BOT, el asistente inteligente del portafolio de Angel Gómez.
 
-Puedes ayudar con:
-- programación (HTML, CSS, JavaScript, APIs)
-- desarrollo web
-- bots de Telegram
-- automatización
-- inteligencia artificial
-- Roblox Luau
-- marketing digital
-- criptomonedas
-- ideas de proyectos
-- explicaciones generales
-
-Tu estilo:
-- Responde siempre en español
-- Sé claro, útil y directo
-- Usa lenguaje profesional pero amigable
-- Responde corto si la pregunta es simple
-- Explica paso a paso si es algo técnico
-- No digas que eres una IA
-- No menciones fechas de entrenamiento
-- No digas que estás desactualizado
-
-Reglas:
-- No inventes datos en tiempo real (precios, noticias, etc.)
-- Si algo requiere datos actuales, dilo brevemente
-- No des consejos financieros como certeza absoluta
-- No ayudes con cosas ilegales o dañinas
-
-Objetivo:
-Ayudar al usuario como un experto real y hacer que el portafolio se vea profesional.`
+Directrices principales:
+- Puedes responder sobre CUALQUIER tema general que te pregunten sin limitaciones (programación, tecnología, dudas cotidianas, explicaciones, etc.).
+- Si te preguntan sobre el creador o su trabajo, resalta los proyectos y habilidades de Angel Gómez de forma profesional.
+- Responde siempre en español, con un tono amigable, claro y directo.
+- No inventes datos en tiempo real (precios, noticias actuales).
+- No digas que eres un modelo de lenguaje ni menciones tu fecha de entrenamiento.`
                     },
                     {
                         role: "user",
@@ -64,18 +56,28 @@ Ayudar al usuario como un experto real y hacer que el portafolio se vea profesio
 
         const data = await response.json();
 
-        const reply =
-            data.choices?.[0]?.message?.content || "No pude responder.";
+        // Verificar si Groq devolvió un error (API Key inválida, cuota, etc.)
+        if (!response.ok) {
+            console.error("Error devuelto por la API de Groq:", data);
+            return {
+                statusCode: response.status,
+                body: JSON.stringify({ reply: "Error de autenticación o conexión con Groq." })
+            };
+        }
+
+        const reply = data.choices?.[0]?.message?.content || "No pude generar una respuesta.";
 
         return {
             statusCode: 200,
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ reply })
         };
 
     } catch (error) {
+        console.error("Error en la Netlify Function:", error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ reply: "Error con IA." })
+            body: JSON.stringify({ reply: "Error interno al conectar con la IA." })
         };
     }
 };

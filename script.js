@@ -164,3 +164,53 @@ document.querySelectorAll(".bot-sugerencias button").forEach(btn => {
         enviarMensajeBot();
     });
 });
+
+/* ================= MICRÓFONO - WEB SPEECH API ================= */
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const botMic = document.getElementById("bot-mic");
+
+if (SpeechRecognition && botMic) {
+    botMic.hidden = false;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "es-CO";
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    let listening = false;
+    let textoAnterior = "";
+
+    botMic.addEventListener("click", () => {
+        if (listening) {
+            recognition.stop();
+        } else {
+            textoAnterior = botInput.value;
+            recognition.start();
+        }
+    });
+
+    recognition.addEventListener("start", () => {
+        listening = true;
+        botMic.classList.add("listening");
+    });
+
+    recognition.addEventListener("result", (e) => {
+        let transcripcion = "";
+        for (let i = 0; i < e.results.length; i++) {
+            transcripcion += e.results[i][0].transcript;
+        }
+        const separador = textoAnterior.length > 0 ? " " : "";
+        botInput.value = textoAnterior + separador + transcripcion;
+    });
+
+    recognition.addEventListener("end", () => {
+        listening = false;
+        botMic.classList.remove("listening");
+    });
+
+    recognition.addEventListener("error", () => {
+        listening = false;
+        botMic.classList.remove("listening");
+    });
+}
