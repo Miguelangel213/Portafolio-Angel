@@ -1,19 +1,26 @@
 exports.handler = async function (event) {
+    const headers = {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS"
+    };
+
+    if (event.httpMethod === "OPTIONS") {
+        return { statusCode: 200, headers, body: "" };
+    }
+
     if (event.httpMethod !== "POST") {
         return {
             statusCode: 405,
+            headers,
             body: JSON.stringify({ reply: "Método no permitido" })
         };
     }
 
-    const headers = {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type"
-    };
-
     try {
-        const apiKey = process.env.GROQ_API_KEY;
+        const rawApiKey = process.env.GROQ_API_KEY;
+        const apiKey = rawApiKey ? rawApiKey.trim() : null;
 
         if (!apiKey) {
             console.error("ERROR: La variable GROQ_API_KEY no está configurada en Netlify.");
@@ -24,8 +31,6 @@ exports.handler = async function (event) {
             };
         }
 
-        console.log("GROQ_API_KEY presente:", apiKey.slice(0, 8) + "...");
-
         const { message } = JSON.parse(event.body || "{}");
         if (!message) {
             return {
@@ -35,10 +40,8 @@ exports.handler = async function (event) {
             };
         }
 
-        const model = "llama-3.1-8b-instant";
+        const model = "llama-3.3-70b-versatile";
         const url = "https://api.groq.com/openai/v1/chat/completions";
-
-        console.log("Enviando a Groq — modelo:", model, "| url:", url);
 
         const requestBody = {
             model,
@@ -72,8 +75,6 @@ Directrices principales:
 
         const rawBody = await response.text();
 
-        console.log("Groq respondió — status:", response.status);
-
         if (!response.ok) {
             console.error("Error de Groq — status:", response.status, "| body:", rawBody);
             let errorMsg = `Error de Groq (${response.status})`;
@@ -88,21 +89,8 @@ Directrices principales:
             };
         }
 
-        let data;
-        try {
-            data = JSON.parse(rawBody);
-        } catch (parseErr) {
-            console.error("Respuesta de Groq no es JSON válido:", rawBody.slice(0, 500));
-            return {
-                statusCode: 502,
-                headers,
-                body: JSON.stringify({ reply: "La IA devolvió una respuesta inesperada." })
-            };
-        }
-
+        const data = JSON.parse(rawBody);
         const reply = data.choices?.[0]?.message?.content || "No pude generar una respuesta.";
-
-        console.log("Respuesta exitosa — largo:", reply.length);
 
         return {
             statusCode: 200,
@@ -111,7 +99,7 @@ Directrices principales:
         };
 
     } catch (error) {
-        console.error("Error en la Netlify Function:", error.name, error.message, error.stack);
+        console.error("Error en la Netlify Function:", error);
         return {
             statusCode: 500,
             headers,
