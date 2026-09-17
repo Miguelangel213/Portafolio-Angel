@@ -123,11 +123,28 @@ async function respuestaBotAPI(texto) {
             body: JSON.stringify({ message: texto })
         });
 
-        const data = await res.json();
+        console.log("Respuesta de la función — status:", res.status);
+
+        const raw = await res.text();
+
+        let data;
+        try {
+            data = JSON.parse(raw);
+        } catch (parseErr) {
+            console.error("La función no devolvió JSON válido:", raw.slice(0, 300));
+            return "Error: la IA devolvió una respuesta inesperada.";
+        }
+
+        if (!res.ok) {
+            console.error("Error del servidor — status:", res.status, "| respuesta:", data);
+            return data.reply || `Error del servidor (${res.status}).`;
+        }
+
         return data.reply || "No pude responder ahora.";
 
     } catch (error) {
-        return "Error conectando con la IA.";
+        console.error("Error de red al conectar con la IA:", error.message, error);
+        return "Error de red al conectar con la IA. Revisa tu conexión.";
     }
 }
 
