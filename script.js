@@ -4,6 +4,7 @@ const velocidadEscribir = 100, velocidadBorrar = 50, pausaAntesBorrar = 2000, pa
 
 function typeText() {
     const el = document.getElementById("typing-text");
+    if (!el) return;
     const textoCompleto = textos[textoActual];
 
     if (isDeleting) {
