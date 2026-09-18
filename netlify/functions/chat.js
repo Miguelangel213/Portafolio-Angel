@@ -40,8 +40,8 @@ exports.handler = async function (event) {
             };
         }
 
-        // Modelo actualizado a llama-3.1-8b-instant
-        const model = "llama-3.1-8b-instant";
+        // Modelo actualizado: llama-3.1-8b-instant fue descontinuado por Groq el 16/08/2026
+        const model = "openai/gpt-oss-20b";
         const url = "https://api.groq.com/openai/v1/chat/completions";
 
         const requestBody = {
@@ -83,8 +83,10 @@ Directrices principales:
                 const errorData = JSON.parse(rawBody);
                 errorMsg = errorData.error?.message || errorMsg;
             } catch (_) {}
+            // Devolvemos 200 con el error en el body: así el fetch del frontend
+            // nunca lo confunde con un 404 de "función no encontrada".
             return {
-                statusCode: response.status,
+                statusCode: 200,
                 headers,
                 body: JSON.stringify({ reply: `Error al conectar con la IA: ${errorMsg}` })
             };
