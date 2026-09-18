@@ -956,6 +956,32 @@ footer p {
     50% { box-shadow: 0 0 0 8px rgba(255, 50, 50, 0); }
 }
 
+.bot-voice-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.9rem;
+    min-width: 44px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(0, 255, 136, 0.25);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.bot-voice-btn:hover {
+    background: rgba(0, 255, 136, 0.12);
+    border-color: var(--color-acento);
+}
+
+.bot-voice-btn.activo {
+    background: rgba(0, 255, 136, 0.15);
+    border-color: var(--color-acento);
+    color: var(--color-acento);
+}
+
+.bot-voice-btn.hablando {
+    animation: mic-pulse 1.2s ease-in-out infinite;
+}
+
 .bot-sugerencias {
     display: flex;
     gap: 0.6rem;
@@ -981,6 +1007,7 @@ footer p {
     }
 
     .bot-mic-btn,
+    .bot-voice-btn,
     #bot-send {
         flex: 1 1 auto;
     }

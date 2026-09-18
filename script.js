@@ -155,6 +155,7 @@ async function enviarMensajeBot() {
     const texto = botInput.value.trim();
     if (texto === "") return;
 
+    detenerVoz();
     agregarMensaje(texto, "user");
     botInput.value = "";
 
@@ -162,6 +163,7 @@ async function enviarMensajeBot() {
 
     const respuesta = await respuestaBotAPI(texto);
     escribiendo.textContent = respuesta;
+    hablar(respuesta);
 }
 
 if (botSend) {
@@ -231,4 +233,80 @@ if (SpeechRecognition && botMic) {
         listening = false;
         botMic.classList.remove("listening");
     });
+}
+
+/* ================= VOZ DEL BOT - TEXT TO SPEECH ================= */
+
+const botVoice = document.getElementById("bot-voice");
+const iconoVozOn = botVoice ? botVoice.querySelector(".icono-voz-on") : null;
+const iconoVozOff = botVoice ? botVoice.querySelector(".icono-voz-off") : null;
+
+let vozActiva = localStorage.getItem("popsbot-voz") !== "off";
+let vozDisponible = "speechSynthesis" in window;
+
+function elegirVozEspanol() {
+    const voces = speechSynthesis.getVoices();
+    return (
+        voces.find(v => v.lang === "es-CO") ||
+        voces.find(v => v.lang && v.lang.startsWith("es")) ||
+        null
+    );
+}
+
+function actualizarBotonVoz() {
+    if (!botVoice) return;
+    botVoice.classList.toggle("activo", vozActiva);
+    botVoice.setAttribute("aria-pressed", String(vozActiva));
+    if (iconoVozOn) iconoVozOn.hidden = !vozActiva;
+    if (iconoVozOff) iconoVozOff.hidden = vozActiva;
+}
+
+function detenerVoz() {
+    if (vozDisponible) {
+        speechSynthesis.cancel();
+    }
+    if (botVoice) botVoice.classList.remove("hablando");
+}
+
+function hablar(texto) {
+    if (!vozDisponible || !vozActiva || !texto) return;
+
+    speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(texto);
+    utterance.lang = "es-CO";
+    utterance.rate = 1.05;
+    utterance.pitch = 1;
+
+    const voz = elegirVozEspanol();
+    if (voz) utterance.voice = voz;
+
+    utterance.onstart = () => {
+        if (botVoice) botVoice.classList.add("hablando");
+    };
+    utterance.onend = utterance.onerror = () => {
+        if (botVoice) botVoice.classList.remove("hablando");
+    };
+
+    speechSynthesis.speak(utterance);
+}
+
+if (vozDisponible && botVoice) {
+    botVoice.hidden = false;
+    actualizarBotonVoz();
+
+    // Algunos navegadores cargan las voces de forma asíncrona
+    speechSynthesis.addEventListener("voiceschanged", () => {});
+
+    botVoice.addEventListener("click", () => {
+        vozActiva = !vozActiva;
+        localStorage.setItem("popsbot-voz", vozActiva ? "on" : "off");
+        actualizarBotonVoz();
+        if (!vozActiva) detenerVoz();
+    });
+}
+
+// Si el usuario usa el micrófono, cortamos cualquier voz que esté sonando
+if (botMic) {
+    botMic.addEventListener("click", detenerVoz);
 }
