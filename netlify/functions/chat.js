@@ -40,7 +40,8 @@ exports.handler = async function (event) {
             };
         }
 
-        const model = "llama-3.3-70b-versatile";
+        // Modelo actualizado a llama-3.1-8b-instant
+        const model = "llama-3.1-8b-instant";
         const url = "https://api.groq.com/openai/v1/chat/completions";
 
         const requestBody = {
